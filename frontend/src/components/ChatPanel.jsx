@@ -63,6 +63,7 @@ export default function ChatPanel({
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const abortRef = useRef(null)
+  const startStreamRef = useRef(null)
 
   // Auto-scroll on new content.
   useEffect(() => {
@@ -138,13 +139,16 @@ export default function ChatPanel({
     }
   }, [addMessage, messages, fullTranscript, apiKey, settings])
 
+  // Keep ref current so the pendingSuggestion effect always calls the latest version.
+  startStreamRef.current = startStream
+
   // When a suggestion card is clicked, consume it and start a detail stream.
   useEffect(() => {
     if (!pendingSuggestion) return
     onPendingConsumed()
-    startStream(pendingSuggestion.preview, true, pendingSuggestion)
+    startStreamRef.current(pendingSuggestion.preview, true, pendingSuggestion)
     inputRef.current?.focus()
-  }, [pendingSuggestion]) // intentionally minimal deps — startStream is recreated but pendingSuggestion is the trigger
+  }, [pendingSuggestion, onPendingConsumed])
 
   const handleSend = useCallback(() => {
     const text = input.trim()

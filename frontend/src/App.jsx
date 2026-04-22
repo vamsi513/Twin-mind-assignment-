@@ -1,5 +1,3 @@
-// Day 5 — chat panel and settings modal wired in.
-// All 3 columns working. API key guard and export in next commit.
 import { useState, useCallback, useMemo } from 'react'
 import { useAudio } from './hooks/useAudio'
 import TranscriptPanel from './components/TranscriptPanel'
@@ -66,45 +64,62 @@ export default function App() {
   const apiKeySet = apiKey.length > 0
 
   return (
-    <div className="flex h-screen bg-bg text-gray-200 overflow-hidden divide-x divide-border">
-      <ErrorBoundary label="Transcript">
-        <TranscriptPanel
-          isRecording={isRecording}
-          transcript={transcript}
-          micError={micError}
-          apiKeySet={apiKeySet}
-          onStart={startRecording}
-          onStop={stopRecording}
-          onExport={handleExport}
-        />
-      </ErrorBoundary>
+    <div className="relative flex flex-col h-screen bg-bg text-gray-200 overflow-hidden">
+      {/* API key guard — visible until a key is entered */}
+      {!apiKeySet && (
+        <div className="shrink-0 bg-amber-950/80 border-b border-amber-800 px-4 py-2.5 text-center text-sm text-amber-200 z-10">
+          Please add your Groq API key in{' '}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="underline font-semibold hover:text-white transition-colors"
+          >
+            Settings
+          </button>{' '}
+          to begin.
+        </div>
+      )}
 
-      <ErrorBoundary label="Suggestions">
-        <SuggestionsPanel
-          isRecording={isRecording}
-          fullTranscript={fullTranscript}
-          recentTranscript={recentTranscript}
-          apiKey={apiKey}
-          settings={settings}
-          apiKeySet={apiKeySet}
-          batches={batches}
-          onBatchAdd={(batch) => setBatches((prev) => [batch, ...prev])}
-          onSuggestionClick={setPendingSuggestion}
-          onOpenSettings={() => setShowSettings(true)}
-        />
-      </ErrorBoundary>
+      {/* Three columns */}
+      <div className="flex flex-1 min-h-0 divide-x divide-border">
+        <ErrorBoundary label="Transcript">
+          <TranscriptPanel
+            isRecording={isRecording}
+            transcript={transcript}
+            micError={micError}
+            apiKeySet={apiKeySet}
+            onStart={startRecording}
+            onStop={stopRecording}
+            onExport={handleExport}
+          />
+        </ErrorBoundary>
 
-      <ErrorBoundary label="Chat">
-        <ChatPanel
-          fullTranscript={fullTranscript}
-          apiKey={apiKey}
-          settings={settings}
-          pendingSuggestion={pendingSuggestion}
-          onPendingConsumed={() => setPendingSuggestion(null)}
-          messages={chatMessages}
-          onMessagesChange={setChatMessages}
-        />
-      </ErrorBoundary>
+        <ErrorBoundary label="Suggestions">
+          <SuggestionsPanel
+            isRecording={isRecording}
+            fullTranscript={fullTranscript}
+            recentTranscript={recentTranscript}
+            apiKey={apiKey}
+            settings={settings}
+            apiKeySet={apiKeySet}
+            batches={batches}
+            onBatchAdd={(batch) => setBatches((prev) => [batch, ...prev])}
+            onSuggestionClick={setPendingSuggestion}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+        </ErrorBoundary>
+
+        <ErrorBoundary label="Chat">
+          <ChatPanel
+            fullTranscript={fullTranscript}
+            apiKey={apiKey}
+            settings={settings}
+            pendingSuggestion={pendingSuggestion}
+            onPendingConsumed={() => setPendingSuggestion(null)}
+            messages={chatMessages}
+            onMessagesChange={setChatMessages}
+          />
+        </ErrorBoundary>
+      </div>
 
       {showSettings && (
         <SettingsModal
