@@ -28,7 +28,7 @@ def get_groq(api_key: str) -> Groq:
     return Groq(api_key=api_key)
 
 
-async def stream_chat(client: Groq, messages: list[dict]) -> StreamingResponse:
+def stream_completion(client: Groq, messages: list[dict]) -> StreamingResponse:
     def generate():
         with client.chat.completions.stream(
             model="openai/gpt-oss-120b",
@@ -48,6 +48,7 @@ async def stream_chat(client: Groq, messages: list[dict]) -> StreamingResponse:
 class SuggestionsRequest(BaseModel):
     recent_transcript: str
     full_transcript: str
+    system_prompt: str | None = None  # override from settings UI
 
 
 class SuggestionItem(BaseModel):
@@ -59,6 +60,7 @@ class SuggestionItem(BaseModel):
 class DetailRequest(BaseModel):
     suggestion: SuggestionItem
     full_transcript: str
+    system_prompt: str | None = None
 
 
 class ChatMessage(BaseModel):
@@ -69,6 +71,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     transcript_context: str
+    system_prompt: str | None = None
 
 
 # ── routes ────────────────────────────────────────────────────────────────────
@@ -82,7 +85,7 @@ async def transcribe(
     audio_bytes = await audio.read()
 
     if len(audio_bytes) < 1000:
-        # Silently skip near-empty chunks (background noise, silence)
+        # Near-silent chunk — skip without calling Whisper.
         return {"text": ""}
 
     transcription = client.audio.transcriptions.create(
@@ -100,6 +103,7 @@ async def suggestions(
 ):
     client = get_groq(x_groq_api_key)
 
+    system = body.system_prompt or prompts.SUGGESTIONS_SYSTEM
     user_content = prompts.SUGGESTIONS_USER.format(
         full_transcript=body.full_transcript or "(none yet)",
         recent_transcript=body.recent_transcript or "(none yet)",
@@ -108,7 +112,7 @@ async def suggestions(
     response = client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
-            {"role": "system", "content": prompts.SUGGESTIONS_SYSTEM},
+            {"role": "system", "content": system},
             {"role": "user", "content": user_content},
         ],
         temperature=0.4,
@@ -132,6 +136,7 @@ async def detail(
 ):
     client = get_groq(x_groq_api_key)
 
+    system = body.system_prompt or prompts.DETAIL_SYSTEM
     user_content = prompts.DETAIL_USER.format(
         full_transcript=body.full_transcript or "(none yet)",
         suggestion_type=body.suggestion.type,
@@ -139,8 +144,8 @@ async def detail(
         detail_context=body.suggestion.detail_context,
     )
 
-    return await stream_chat(client, [
-        {"role": "system", "content": prompts.DETAIL_SYSTEM},
+    return stream_completion(client, [
+        {"role": "system", "content": system},
         {"role": "user", "content": user_content},
     ])
 
@@ -152,14 +157,15 @@ async def chat(
 ):
     client = get_groq(x_groq_api_key)
 
+    chat_system = body.system_prompt or prompts.CHAT_SYSTEM
     system_with_context = (
         prompts.CHAT_CONTEXT_HEADER.format(
             transcript_context=body.transcript_context or "(no transcript yet)"
         )
-        + prompts.CHAT_SYSTEM
+        + chat_system
     )
 
     messages = [{"role": "system", "content": system_with_context}]
     messages += [{"role": m.role, "content": m.content} for m in body.messages]
 
-    return await stream_chat(client, messages)
+    return stream_completion(client, messages)
