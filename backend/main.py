@@ -93,6 +93,7 @@ async def transcribe(
         model="whisper-large-v3",
         file=(audio.filename or "audio.webm", audio_bytes),
         response_format="text",
+        language="en",
     )
     return {"text": transcription if isinstance(transcription, str) else transcription.text}
 

@@ -7,9 +7,7 @@ A real-time meeting intelligence app that listens to a live conversation, transc
 ## Live Demo
 
 **Frontend:** https://twin-mind-assignment-alpha.vercel.app  
-**Backend:** https://twin-mind-assignment-production.up.railway.app
-
-*(Update these after deployment — see Phase 5 below)*
+**Backend:** https://twin-mind-assignment.onrender.com
 
 ---
 
@@ -174,13 +172,15 @@ The chat prompt, by contrast, instructs brevity. Same model, different register.
 
 ## Deployment
 
-### Railway (backend)
+### Render (backend)
 
 1. Push repo to GitHub (already done)
-2. Create new Railway project → "Deploy from GitHub repo" → select `twinmind-live`
-3. Set root directory to `backend`
-4. Railway auto-detects Python, installs `requirements.txt`, runs `Procfile`
-5. Copy the Railway public URL (e.g. `https://twinmind-live.up.railway.app`)
+2. Create new Web Service at render.com → connect repo
+3. Set root directory to `backend`, runtime Python 3
+4. Build command: `pip install -r requirements.txt`
+5. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. Select Free instance type
+7. Copy the Render public URL (e.g. `https://twin-mind-assignment.onrender.com`)
 
 ### Vercel (frontend)
 
