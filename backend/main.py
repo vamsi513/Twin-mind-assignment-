@@ -13,7 +13,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://twin-mind-assignment-alpha.vercel.app",
-        "https://twin-mind-assignment.onrender.com",
         "http://localhost:5173",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
